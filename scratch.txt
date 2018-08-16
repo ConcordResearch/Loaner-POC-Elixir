@@ -1,0 +1,20 @@
+find = fn {:ok, %AccountModel{account_number: num}}  ->  AccountSupervisor.find_or_create_process(num) end
+receivable = %ReceivableModel{type: "DuesTest", amount: 100.00}
+assess = fn {:ok,account_number} -> Account.assess_receivable(account_number, receivable) end
+
+AccountSupervisor.account_process_count
+AccountSupervisor.account_numbers
+time_in_seconds = Benchmark.measure(
+    fn -> 1..1_000_000
+        |> Stream.map(&(%AccountModel{account_number: &1})) 
+        |> Stream.map(&Datastore.put(:db, &1)) 
+        |> Stream.map(&find.(&1)) 
+        |> Stream.map(&assess.(&1)) 
+        |> Stream.run() 
+        end
+    ) 
+"It took #{time_in_seconds} seconds to execute billing"
+AccountSupervisor.account_process_count
+ 
+
+ TODO: Need to implement insert_new to avoid overwritting accounts in db.
